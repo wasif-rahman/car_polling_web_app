@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # 3. Data Tier (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: carpool-db
+    restart: always
+    environment:
+      POSTGRES_USER: carpool_user
+      POSTGRES_PASSWORD: super_secure_password
+      POSTGRES_DB: carpool_db
+    ports:
+      - "5432:5432" # Accessible locally for debugging
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Application Tier (Next.js Node app)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carpool-web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://carpool_user:super_secure_password@db:5432/carpool_db?schema=public
+      - NEXTAUTH_SECRET=sharemyride_super_secure_jwt_secret_key_2026!
+      - NEXTAUTH_URL=http://localhost:3000
+      - PUSHER_APP_ID=2164184
+      - PUSHER_KEY=8471c7fc91ed55683547
+      - PUSHER_SECRET=2a76d7d984ea07496f43
+      - NEXT_PUBLIC_PUSHER_KEY=8471c7fc91ed55683547
+      - PUSHER_CLUSTER=ap2
+      - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyA0fY4F3W06R6BuUd_GKNlgZFQ497Luk20
+      - NEXT_PUBLIC_OPENROUTESERVICE_API_KEY=eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjRkMzg2N2VlY2NiZjQ1ZTJiN2Y5MzQ4MDE0M2IxY2I1IiwiaCI6Im11cm11cjY0In0=
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
