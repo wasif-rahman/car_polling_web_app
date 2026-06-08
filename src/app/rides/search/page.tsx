@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Search, MapPin, Calendar, Users, Clock, ArrowRight, Star, Car } from "lucide-react";
+import { Search, MapPin, Calendar, Clock, ArrowRight, Star, Car } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
-import { loadGoogleMapsScript } from "@/components/Map";
+import LocationInput from "@/components/LocationInput";
 
 // Dynamic map import to prevent Next.js SSR document-not-defined reference crashes
 const LeafletMap = dynamic(() => import("@/components/Map"), {
@@ -20,57 +20,47 @@ const LeafletMap = dynamic(() => import("@/components/Map"), {
   ),
 });
 
+interface Driver {
+  name: string;
+  rating: number;
+  vehicleDetails?: string | null;
+}
+
+interface Vehicle {
+  color: string;
+  brand: string;
+  model: string;
+}
+
+interface Ride {
+  id: string;
+  startLocation: string;
+  endLocation: string;
+  startLat: number;
+  startLng: number;
+  endLat: number;
+  endLng: number;
+  departureTime: string;
+  availableSeats: number;
+  pricePerSeat: number;
+  status: string;
+  driver: Driver;
+  vehicle?: Vehicle | null;
+}
+
 export default function SearchRidesPage() {
   const [startQuery, setStartQuery] = useState("");
   const [endQuery, setEndQuery] = useState("");
   const [startCoords, setStartCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [endCoords, setEndCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [dateQuery, setDateQuery] = useState("");
-  const [rides, setRides] = useState<any[]>([]);
+  const [rides, setRides] = useState<Ride[]>([]);
   const [mapCenter, setMapCenter] = useState<[number, number]>([31.5204, 74.3587]); // Default to Lahore
   const [mapZoom, setMapZoom] = useState(8);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  useEffect(() => {
-    // Inject and setup Google Places Autocomplete on our input inputs
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyA0fY4F3W06R6BuUd_GKNlgZFQ497Luk20";
-    loadGoogleMapsScript(apiKey)
-      .then((google) => {
-        const startInput = document.getElementById("start-location-input") as HTMLInputElement;
-        if (startInput) {
-          const autocomplete = new google.maps.places.Autocomplete(startInput, {
-            fields: ["geometry", "formatted_address", "name"],
-          });
-          autocomplete.addListener("place_changed", () => {
-            const place = autocomplete.getPlace();
-            if (place.geometry && place.geometry.location) {
-              const lat = place.geometry.location.lat();
-              const lng = place.geometry.location.lng();
-              setStartCoords({ lat, lng });
-              setStartQuery(place.formatted_address || place.name || "");
-            }
-          });
-        }
-
-        const endInput = document.getElementById("end-location-input") as HTMLInputElement;
-        if (endInput) {
-          const autocomplete = new google.maps.places.Autocomplete(endInput, {
-            fields: ["geometry", "formatted_address", "name"],
-          });
-          autocomplete.addListener("place_changed", () => {
-            const place = autocomplete.getPlace();
-            if (place.geometry && place.geometry.location) {
-              const lat = place.geometry.location.lat();
-              const lng = place.geometry.location.lng();
-              setEndCoords({ lat, lng });
-              setEndQuery(place.formatted_address || place.name || "");
-            }
-          });
-        }
-      })
-      .catch((err) => console.error("Places Autocomplete loading error:", err));
-  }, []);
+  // Autocomplete suggestions are handled by the self-contained LocationInput components.
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -78,7 +68,7 @@ export default function SearchRidesPage() {
     setErrorMsg("");
 
     try {
-      let queryStr = "/api/rides?";
+      const queryStr = "/api/rides?";
       const params: string[] = [];
 
       if (startQuery.trim()) {
@@ -131,15 +121,21 @@ export default function SearchRidesPage() {
       if (!res.ok) throw new Error("Failed to search rides from database.");
       const data = await res.json();
       setRides(data);
-    } catch (err: any) {
-      setErrorMsg(err.message || "An error occurred");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred";
+      setErrorMsg(message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    handleSearch();
+    const triggerSearch = async () => {
+      await Promise.resolve();
+      handleSearch();
+    };
+    triggerSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -172,40 +168,22 @@ export default function SearchRidesPage() {
 
             <form onSubmit={handleSearch} className="flex flex-col gap-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#22C55E" }}>
-                    <MapPin className="h-4 w-4" />
-                  </span>
-                  <input
-                    id="start-location-input"
-                    type="text"
-                    placeholder="From (e.g. Lahore)"
-                    value={startQuery}
-                    onChange={(e) => {
-                      setStartQuery(e.target.value);
-                      setStartCoords(null);
-                    }}
-                    className="input-dark"
-                    style={{ paddingLeft: "44px" }}
-                  />
-                </div>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#06B6D4" }}>
-                    <MapPin className="h-4 w-4" />
-                  </span>
-                  <input
-                    id="end-location-input"
-                    type="text"
-                    placeholder="To (e.g. Islamabad)"
-                    value={endQuery}
-                    onChange={(e) => {
-                      setEndQuery(e.target.value);
-                      setEndCoords(null);
-                    }}
-                    className="input-dark"
-                    style={{ paddingLeft: "44px" }}
-                  />
-                </div>
+                <LocationInput
+                  id="start-location-input"
+                  placeholder="From (e.g. Lahore)"
+                  value={startQuery}
+                  onChange={setStartQuery}
+                  onSelectCoords={setStartCoords}
+                  icon={<MapPin className="h-4 w-4" style={{ color: "#22C55E" }} />}
+                />
+                <LocationInput
+                  id="end-location-input"
+                  placeholder="To (e.g. Islamabad)"
+                  value={endQuery}
+                  onChange={setEndQuery}
+                  onSelectCoords={setEndCoords}
+                  icon={<MapPin className="h-4 w-4" style={{ color: "#06B6D4" }} />}
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">

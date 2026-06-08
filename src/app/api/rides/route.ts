@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       // Fallback parser for standard HTML5 datetime-local format YYYY-MM-DDTHH:mm
       const match = String(departureTime).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
       if (match) {
-        const [_, year, month, day, hours, minutes] = match;
+        const [, year, month, day, hours, minutes] = match;
         parsedDate = new Date(
           parseInt(year),
           parseInt(month) - 1,

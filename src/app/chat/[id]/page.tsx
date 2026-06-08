@@ -17,6 +17,15 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { pusherClient } from "@/lib/pusher";
+import { t } from "@/lib/i18n";
+
+interface CustomUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string | null;
+}
 
 interface Message {
   id: string;
@@ -79,15 +88,23 @@ export default function ChatRoomPage() {
       }
       const chatData = await chatRes.json();
       setMessages(chatData);
-    } catch (err: any) {
-      setErrorMsg(err.message || "An unexpected error occurred.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setErrorMsg(message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (rideId && authStatus === "authenticated") fetchInitialData();
+    if (rideId && authStatus === "authenticated") {
+      const init = async () => {
+        await Promise.resolve();
+        fetchInitialData();
+      };
+      init();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rideId, authStatus]);
 
   const scrollToBottom = () => { messageEndRef.current?.scrollIntoView({ behavior: "smooth" }); };
@@ -100,7 +117,9 @@ export default function ChatRoomPage() {
     let isPusherConnected = false;
     const channelName = `chat-${rideId}`;
     const channel = pusherClient.subscribe(channelName);
-    setConnectionStatus("connecting");
+    Promise.resolve().then(() => {
+      setConnectionStatus("connecting");
+    });
 
     channel.bind("new-message", (newMessage: Message) => {
       setConnectionStatus("connected");
@@ -129,13 +148,18 @@ export default function ChatRoomPage() {
       }
     }, 4000);
 
-    const handleStateChange = (state: any) => {
+    const handleStateChange = (state: { current: string }) => {
       if (state.current === "connected") { setConnectionStatus("connected"); isPusherConnected = true; }
       else if (state.current === "failed" || state.current === "disconnected") { setConnectionStatus("fallback"); }
     };
 
     pusherClient.connection.bind("state_change", handleStateChange);
-    if (pusherClient.connection.state === "connected") { setConnectionStatus("connected"); isPusherConnected = true; }
+    if (pusherClient.connection.state === "connected") {
+      Promise.resolve().then(() => {
+        setConnectionStatus("connected");
+      });
+      isPusherConnected = true;
+    }
 
     return () => {
       pusherClient.unsubscribe(channelName);
@@ -169,10 +193,11 @@ export default function ChatRoomPage() {
         if (prev.some((m) => m.id === sentMsg.id)) return prev;
         return [...prev, sentMsg];
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setInputText(messageContent);
-      alert(err.message || "Could not deliver your message. Please try again.");
+      const message = err instanceof Error ? err.message : "Could not deliver your message. Please try again.";
+      alert(message);
     } finally {
       setSending(false);
     }
@@ -188,7 +213,7 @@ export default function ChatRoomPage() {
               className="h-12 w-12 rounded-full border-2"
               style={{ borderTopColor: "#22C55E", borderRightColor: "#06B6D4", borderColor: "transparent", animation: "spin 1s linear infinite" }}
             />
-            <p className="text-sm font-semibold" style={{ color: "#64748B" }}>Opening secure ride pool chat room...</p>
+            <p className="text-sm font-semibold" style={{ color: "#64748B" }}>{t("Opening secure ride pool chat room...")}</p>
           </div>
         </div>
       </div>
@@ -208,7 +233,7 @@ export default function ChatRoomPage() {
               <AlertCircle className="h-8 w-8" style={{ color: "#FB7185" }} />
             </div>
             <h1 className="text-xl font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}>
-              Access Denied
+              {t("Access Denied")}
             </h1>
             <p className="text-sm leading-relaxed" style={{ color: "#64748B" }}>{errorMsg || "You are not authorized to view this page."}</p>
             <button
@@ -225,7 +250,7 @@ export default function ChatRoomPage() {
     );
   }
 
-  const currentUser = session?.user as any;
+  const currentUser = session?.user as CustomUser;
   const isDriver = ride.driver.id === currentUser?.id;
 
   return (
@@ -266,14 +291,14 @@ export default function ChatRoomPage() {
 
           <div className="flex flex-col gap-3">
             <div>
-              <span className="text-[9px] font-bold uppercase tracking-widest block mb-1" style={{ color: "#475569" }}>Start Point</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest block mb-1" style={{ color: "#475569" }}>{t("Start Point")}</span>
               <div className="flex items-start gap-1.5">
                 <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "#22C55E" }} />
                 <span className="text-xs font-semibold line-clamp-2" style={{ color: "#CBD5E1" }}>{ride.startLocation}</span>
               </div>
             </div>
             <div>
-              <span className="text-[9px] font-bold uppercase tracking-widest block mb-1" style={{ color: "#475569" }}>Destination</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest block mb-1" style={{ color: "#475569" }}>{t("Destination")}</span>
               <div className="flex items-start gap-1.5">
                 <Navigation className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "#06B6D4" }} />
                 <span className="text-xs font-semibold line-clamp-2" style={{ color: "#CBD5E1" }}>{ride.endLocation}</span>
@@ -291,7 +316,7 @@ export default function ChatRoomPage() {
               <span>{new Date(ride.departureTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
             </div>
             <div className="flex items-center justify-between pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-              <span className="text-[10px] uppercase font-semibold" style={{ color: "#475569" }}>Contribution</span>
+              <span className="text-[10px] uppercase font-semibold" style={{ color: "#475569" }}>{t("Contribution")}</span>
               <span className="font-bold text-sm" style={{ color: "#22C55E" }}>Rs. {ride.pricePerSeat}/seat</span>
             </div>
           </div>
@@ -341,23 +366,23 @@ export default function ChatRoomPage() {
                   className="text-sm font-black tracking-tight"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}
                 >
-                  Pool Coordination Room
+                  {t("Pool Coordination Room")}
                 </h2>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   {connectionStatus === "connected" ? (
                     <>
                       <span className="h-2 w-2 rounded-full" style={{ background: "#22C55E", boxShadow: "0 0 6px #22C55E", animation: "glow-pulse 2s ease-in-out infinite" }} />
-                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#4ADE80" }}>Sync Active</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#4ADE80" }}>{t("Sync Active")}</span>
                     </>
                   ) : connectionStatus === "connecting" ? (
                     <>
                       <span className="h-2 w-2 rounded-full" style={{ background: "#F59E0B", animation: "glow-pulse 2s ease-in-out infinite" }} />
-                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#F59E0B" }}>Connecting...</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#F59E0B" }}>{t("Connecting...")}</span>
                     </>
                   ) : (
                     <>
                       <span className="h-2 w-2 rounded-full" style={{ background: "#F59E0B", animation: "glow-pulse 2s ease-in-out infinite" }} />
-                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#F59E0B" }}>Polling Live</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#F59E0B" }}>{t("Polling Live")}</span>
                     </>
                   )}
                 </div>
@@ -382,7 +407,7 @@ export default function ChatRoomPage() {
             style={{ background: "rgba(6,182,212,0.05)", borderBottom: "1px solid rgba(6,182,212,0.08)", color: "#22D3EE" }}
           >
             <Info className="h-3.5 w-3.5 shrink-0" />
-            <span>Private secure channel between verified driver and approved passengers.</span>
+            <span>{t("Private secure channel between verified driver and approved passengers.")}</span>
           </div>
 
           {/* Messages Area */}
@@ -401,10 +426,10 @@ export default function ChatRoomPage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}>
-                    No Messages Yet
+                    {t("No Messages Yet")}
                   </h3>
                   <p className="text-xs mt-1 max-w-xs leading-relaxed" style={{ color: "#475569" }}>
-                    Start the conversation! Coordinate pickup landmarks, luggage sizes, and arrival timings here.
+                    {t("Start the conversation! Coordinate pickup landmarks, luggage sizes, and arrival timings here.")}
                   </p>
                 </div>
               </div>

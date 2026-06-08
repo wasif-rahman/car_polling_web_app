@@ -2,20 +2,27 @@
 
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import dynamic from "next/dynamic";
 import {
   ArrowRight,
   Leaf,
   Shield,
   Landmark,
-  MapPin,
-  Users,
-  Calendar,
   Car,
   Zap,
   CheckCircle2,
   Star,
   TrendingUp,
 } from "lucide-react";
+
+const ThreeLogo = dynamic(() => import("@/components/ThreeLogo"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[350px] lg:h-[450px] w-full flex items-center justify-center text-xs text-slate-500 uppercase tracking-widest font-black animate-pulse">
+      Loading Classy 3D Model...
+    </div>
+  ),
+});
 
 export default function Home() {
   return (
@@ -50,189 +57,144 @@ export default function Home() {
         />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="max-w-3xl flex flex-col items-start gap-7">
-            {/* Badge */}
-            <div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold animate-fadeIn"
-              style={{
-                background: "rgba(34,197,94,0.12)",
-                border: "1px solid rgba(34,197,94,0.3)",
-                color: "#4ADE80",
-              }}
-            >
-              <Leaf className="h-3.5 w-3.5" strokeWidth={2.5} />
-              Eco-Friendly Commuting Made Simple
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left side text column */}
+            <div className="lg:col-span-7 flex flex-col items-start gap-7 max-w-3xl">
+              {/* Badge */}
+              <div
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold animate-fadeIn"
+                style={{
+                  background: "rgba(34,197,94,0.12)",
+                  border: "1px solid rgba(34,197,94,0.3)",
+                  color: "#4ADE80",
+                }}
+              >
+                <Leaf className="h-3.5 w-3.5" strokeWidth={2.5} />
+                Eco-Friendly Commuting Made Simple
+              </div>
+
+              {/* Headline */}
+              <h1
+                className="text-5xl sm:text-7xl font-black tracking-tight leading-[1.0] sm:leading-[0.95] animate-slideUp animate-delay-100"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                <span style={{ color: "#F8FAFC" }}>Share Rides.</span>
+                <br />
+                <span
+                  style={{
+                    background: "linear-gradient(135deg, #22C55E 0%, #06B6D4 100%)",
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  Split Travel Costs.
+                </span>
+                <br />
+                <span style={{ color: "#CBD5E1" }}>Meet Your Neighbors.</span>
+              </h1>
+
+              {/* Sub text */}
+              <p
+                className="text-lg sm:text-xl leading-relaxed max-w-2xl animate-slideUp animate-delay-200"
+                style={{ color: "#94A3B8" }}
+              >
+                Connect with verified drivers heading your way. Reduce carbon emissions, beat
+                urban traffic, and turn boring daily commutes into budget-friendly social journeys.
+              </p>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 mt-2 w-full sm:w-auto animate-slideUp animate-delay-300">
+                <Link
+                  href="/rides/search"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    padding: "14px 32px",
+                    background: "linear-gradient(135deg, #22C55E 0%, #16A34A 100%)",
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: "15px",
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    borderRadius: "12px",
+                    boxShadow: "0 6px 25px rgba(34,197,94,0.4)",
+                    transition: "all 0.3s ease",
+                    textDecoration: "none",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 35px rgba(34,197,94,0.55)";
+                    (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 25px rgba(34,197,94,0.4)";
+                    (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+                  }}
+                >
+                  Find Available Rides
+                  <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                </Link>
+
+                <Link
+                  href="/register"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    padding: "14px 32px",
+                    background: "rgba(30,41,59,0.6)",
+                    backdropFilter: "blur(12px)",
+                    color: "#F8FAFC",
+                    fontWeight: 600,
+                    fontSize: "15px",
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    borderRadius: "12px",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    transition: "all 0.3s ease",
+                    textDecoration: "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.border = "1px solid rgba(34,197,94,0.4)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(38,51,71,0.8)";
+                    (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.border = "1px solid rgba(255,255,255,0.12)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(30,41,59,0.6)";
+                    (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+                  }}
+                >
+                  <Zap className="h-4 w-4" strokeWidth={2.5} style={{ color: "#22C55E" }} />
+                  Offer an Empty Seat
+                </Link>
+              </div>
+
+              {/* Trust indicators */}
+              <div className="flex items-center gap-5 mt-2 animate-fadeIn animate-delay-500">
+                {[
+                  { icon: CheckCircle2, label: "Verified drivers" },
+                  { icon: Shield, label: "Safe & Secure" },
+                  { icon: Star, label: "4.8★ rated" },
+                ].map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex items-center gap-1.5" style={{ color: "#64748B" }}>
+                    <Icon className="h-3.5 w-3.5" style={{ color: "#22C55E" }} strokeWidth={2} />
+                    <span style={{ fontSize: "12px", fontWeight: 500 }}>{label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Headline */}
-            <h1
-              className="text-5xl sm:text-7xl font-black tracking-tight leading-[1.0] sm:leading-[0.95] animate-slideUp animate-delay-100"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              <span style={{ color: "#F8FAFC" }}>Share Rides.</span>
-              <br />
-              <span
-                style={{
-                  background: "linear-gradient(135deg, #22C55E 0%, #06B6D4 100%)",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Split Travel Costs.
-              </span>
-              <br />
-              <span style={{ color: "#CBD5E1" }}>Meet Your Neighbors.</span>
-            </h1>
-
-            {/* Sub text */}
-            <p
-              className="text-lg sm:text-xl leading-relaxed max-w-2xl animate-slideUp animate-delay-200"
-              style={{ color: "#94A3B8" }}
-            >
-              Connect with verified drivers heading your way. Reduce carbon emissions, beat
-              urban traffic, and turn boring daily commutes into budget-friendly social journeys.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 mt-2 w-full sm:w-auto animate-slideUp animate-delay-300">
-              <Link
-                href="/rides/search"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  padding: "14px 32px",
-                  background: "linear-gradient(135deg, #22C55E 0%, #16A34A 100%)",
-                  color: "#fff",
-                  fontWeight: 700,
-                  fontSize: "15px",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  borderRadius: "12px",
-                  boxShadow: "0 6px 25px rgba(34,197,94,0.4)",
-                  transition: "all 0.3s ease",
-                  textDecoration: "none",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 35px rgba(34,197,94,0.55)";
-                  (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 25px rgba(34,197,94,0.4)";
-                  (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-                }}
-              >
-                Find Available Rides
-                <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-              </Link>
-
-              <Link
-                href="/register"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  padding: "14px 32px",
-                  background: "rgba(30,41,59,0.6)",
-                  backdropFilter: "blur(12px)",
-                  color: "#F8FAFC",
-                  fontWeight: 600,
-                  fontSize: "15px",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  borderRadius: "12px",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  transition: "all 0.3s ease",
-                  textDecoration: "none",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.border = "1px solid rgba(34,197,94,0.4)";
-                  (e.currentTarget as HTMLElement).style.background = "rgba(38,51,71,0.8)";
-                  (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.border = "1px solid rgba(255,255,255,0.12)";
-                  (e.currentTarget as HTMLElement).style.background = "rgba(30,41,59,0.6)";
-                  (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-                }}
-              >
-                <Zap className="h-4 w-4" strokeWidth={2.5} style={{ color: "#22C55E" }} />
-                Offer an Empty Seat
-              </Link>
-            </div>
-
-            {/* Trust indicators */}
-            <div className="flex items-center gap-5 mt-2 animate-fadeIn animate-delay-500">
-              {[
-                { icon: CheckCircle2, label: "Verified drivers" },
-                { icon: Shield, label: "Safe & Secure" },
-                { icon: Star, label: "4.8★ rated" },
-              ].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-1.5" style={{ color: "#64748B" }}>
-                  <Icon className="h-3.5 w-3.5" style={{ color: "#22C55E" }} strokeWidth={2} />
-                  <span style={{ fontSize: "12px", fontWeight: 500 }}>{label}</span>
-                </div>
-              ))}
+            {/* Right side 3D Interactive column */}
+            <div className="lg:col-span-5 w-full h-[350px] lg:h-[450px] flex items-center justify-center relative animate-fadeIn animate-delay-300">
+              <ThreeLogo />
             </div>
           </div>
         </div>
       </header>
-
-      {/* ─── STATS SECTION ─── */}
-      <section className="py-14" style={{ background: "rgba(30,41,59,0.4)", borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0">
-            {[
-              { stat: "12,500+", label: "Completed Pools", icon: Car, color: "#22C55E" },
-              { stat: "85 Tons", label: "CO₂ Emissions Saved", icon: Leaf, color: "#06B6D4", border: true },
-              { stat: "Rs. 50M+", label: "Fuel Costs Saved", icon: TrendingUp, color: "#3B82F6" },
-            ].map(({ stat, label, icon: Icon, color, border }, i) => (
-              <div
-                key={label}
-                className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-8 animate-slideUp"
-                style={{
-                  borderLeft: border ? "1px solid rgba(255,255,255,0.06)" : undefined,
-                  borderRight: border ? "1px solid rgba(255,255,255,0.06)" : undefined,
-                  animationDelay: `${i * 100}ms`,
-                }}
-              >
-                <div
-                  className="p-3 rounded-xl shrink-0"
-                  style={{
-                    background: `${color}18`,
-                    border: `1px solid ${color}30`,
-                  }}
-                >
-                  <Icon className="h-6 w-6" style={{ color }} strokeWidth={2} />
-                </div>
-                <div>
-                  <span
-                    className="text-4xl font-black block"
-                    style={{
-                      fontFamily: "'Plus Jakarta Sans', sans-serif",
-                      background: `linear-gradient(135deg, ${color}, #F8FAFC)`,
-                      WebkitBackgroundClip: "text",
-                      backgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                    }}
-                  >
-                    {stat}
-                  </span>
-                  <span
-                    className="text-xs font-semibold uppercase tracking-widest mt-1 block"
-                    style={{ color: "#64748B" }}
-                  >
-                    {label}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ─── CORE ADVANTAGES ─── */}
       <section className="py-24" style={{ background: "var(--bg)" }}>
@@ -257,7 +219,7 @@ export default function Home() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                ShareMyRide?
+                Pooler?
               </span>
             </h2>
             <p className="mt-4 text-lg leading-relaxed" style={{ color: "#94A3B8" }}>
@@ -516,15 +478,11 @@ export default function Home() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2.5">
-            <div
-              className="p-1.5 rounded-lg"
-              style={{
-                background: "linear-gradient(135deg, rgba(34,197,94,0.15), rgba(6,182,212,0.15))",
-                border: "1px solid rgba(34,197,94,0.2)",
-              }}
-            >
-              <Car className="h-4 w-4" style={{ color: "#22C55E" }} strokeWidth={2.5} />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Pooler Logo"
+              className="h-10 w-auto rounded-lg"
+            />
             <span
               className="font-bold text-base"
               style={{
@@ -535,12 +493,12 @@ export default function Home() {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              ShareMyRide
+              Pooler
             </span>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 text-xs" style={{ color: "#334155" }}>
-            <span>© {new Date().getFullYear()} ShareMyRide. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} Pooler. All rights reserved.</span>
             <span className="hidden sm:block" style={{ color: "#1E293B" }}>•</span>
             <span>Built for Web Engineering 2026.</span>
           </div>

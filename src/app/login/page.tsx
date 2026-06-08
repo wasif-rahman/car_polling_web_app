@@ -43,8 +43,9 @@ export default function LoginPage() {
         router.push("/dashboard");
         router.refresh();
       }, 1500);
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in. Please verify your credentials.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to sign in. Please verify your credentials.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -85,16 +86,14 @@ export default function LoginPage() {
         >
           {/* Header */}
           <div className="flex flex-col items-center text-center mb-8">
-            <div
-              className="p-3.5 rounded-2xl mb-5"
+            <img
+              src="/logo.png"
+              alt="Pooler Logo"
+              className="h-16 w-auto rounded-2xl mb-5 object-contain"
               style={{
-                background: "linear-gradient(135deg, rgba(34,197,94,0.15), rgba(6,182,212,0.1))",
-                border: "1px solid rgba(34,197,94,0.25)",
                 boxShadow: "0 0 20px rgba(34,197,94,0.15)",
               }}
-            >
-              <Car className="h-8 w-8" style={{ color: "#22C55E" }} strokeWidth={2} />
-            </div>
+            />
             <h1
               className="text-2xl font-black tracking-tight"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}
@@ -290,7 +289,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-sm mt-7" style={{ color: "#475569" }}>
-            New to ShareMyRide?{" "}
+            New to Pooler?{" "}
             <Link
               href="/register"
               className="font-semibold transition-all"

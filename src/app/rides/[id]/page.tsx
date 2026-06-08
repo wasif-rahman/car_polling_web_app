@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Car, MapPin, Calendar, Users, Clock, Navigation, Star, ArrowRight, ShieldCheck, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { MapPin, Users, Clock, Navigation, Star, ArrowRight, ShieldCheck, ShieldAlert, CheckCircle2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
 // Dynamic Map import for SSR safety
@@ -20,12 +20,41 @@ const LeafletMap = dynamic(() => import("@/components/Map"), {
   ),
 });
 
+interface Driver {
+  name: string;
+  rating: number;
+  vehicleDetails?: string | null;
+}
+
+interface Vehicle {
+  color: string;
+  brand: string;
+  model: string;
+  plateNumber: string;
+}
+
+interface RideDetail {
+  id: string;
+  startLocation: string;
+  endLocation: string;
+  startLat: number;
+  startLng: number;
+  endLat: number;
+  endLng: number;
+  departureTime: string;
+  availableSeats: number;
+  pricePerSeat: number;
+  status: string;
+  driver: Driver;
+  vehicle?: Vehicle | null;
+}
+
 export default function RideDetailPage() {
   const { id: rideId } = useParams();
-  const { data: session, status: authStatus } = useSession();
+  const { status: authStatus } = useSession();
   const router = useRouter();
 
-  const [ride, setRide] = useState<any>(null);
+  const [ride, setRide] = useState<RideDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [seatsToBook, setSeatsToBook] = useState(1);
@@ -40,15 +69,23 @@ export default function RideDetailPage() {
       if (!res.ok) throw new Error("Could not find this ride pool offer");
       const data = await res.json();
       setRide(data);
-    } catch (err: any) {
-      setErrorMsg(err.message || "An error occurred");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred";
+      setErrorMsg(message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (rideId) fetchRideDetails();
+    if (rideId) {
+      const triggerFetch = async () => {
+        await Promise.resolve();
+        fetchRideDetails();
+      };
+      triggerFetch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rideId]);
 
   const handleBooking = async (e: React.FormEvent) => {
@@ -70,8 +107,9 @@ export default function RideDetailPage() {
 
       setBookingSuccess(true);
       setTimeout(() => { router.push("/dashboard"); }, 1500);
-    } catch (err: any) {
-      setErrorMsg(err.message || "An error occurred");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred";
+      setErrorMsg(message);
     } finally {
       setBookingLoading(false);
     }
@@ -123,8 +161,19 @@ export default function RideDetailPage() {
     );
   }
 
-  const mapRides = ride ? [ride] : [];
-  const mapCenter: [number, number] = ride ? [ride.startLat, ride.startLng] : [37.7749, -122.4194];
+  if (!ride) {
+    return (
+      <div className="flex flex-col min-h-screen" style={{ background: "var(--bg)" }}>
+        <Navbar />
+        <div className="flex-1 flex justify-center items-center">
+          <p className="text-sm font-semibold" style={{ color: "#64748B" }}>No ride details available.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const mapRides = [ride];
+  const mapCenter: [number, number] = [ride.startLat, ride.startLng];
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "var(--bg)" }}>

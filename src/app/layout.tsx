@@ -17,7 +17,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "ShareMyRide | Premium Carpooling Platform",
+  title: "Pooler | Premium Carpooling Platform",
   description: "Save travel costs, reduce traffic, and lower carbon emissions by sharing rides with verified community drivers.",
 };
 

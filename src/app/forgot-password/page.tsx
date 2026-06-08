@@ -2,8 +2,33 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Car, Mail, Lock, ShieldAlert, ArrowRight, ShieldCheck, KeyRound, Check, X, FlaskConical } from "lucide-react";
+import { Mail, Lock, ShieldAlert, ArrowRight, ShieldCheck, KeyRound, Check, X, FlaskConical } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { t } from "@/lib/i18n";
+
+const PasswordRule = ({ met, label }: { met: boolean; label: string }) => (
+  <div className="flex items-center gap-1.5">
+    <div
+      className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
+      style={{
+        background: met ? "rgba(34,197,94,0.2)" : "rgba(100,116,139,0.15)",
+        border: met ? "1px solid rgba(34,197,94,0.4)" : "1px solid rgba(100,116,139,0.2)",
+      }}
+    >
+      {met ? (
+        <Check className="h-2.5 w-2.5" style={{ color: "#4ADE80" }} strokeWidth={3} />
+      ) : (
+        <X className="h-2.5 w-2.5" style={{ color: "#475569" }} strokeWidth={3} />
+      )}
+    </div>
+    <span
+      className="text-xs transition-all duration-300"
+      style={{ color: met ? "#4ADE80" : "#475569", fontWeight: met ? 600 : 400 }}
+    >
+      {label}
+    </span>
+  </div>
+);
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -47,8 +72,9 @@ export default function ForgotPasswordPage() {
       }
 
       setStep(2);
-    } catch (err: any) {
-      setError(err.message || "An error occurred during verification.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred during verification.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -84,36 +110,13 @@ export default function ForgotPasswordPage() {
       }
 
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || "An error occurred. Please try again.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
-
-  const PasswordRule = ({ met, label }: { met: boolean; label: string }) => (
-    <div className="flex items-center gap-1.5">
-      <div
-        className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
-        style={{
-          background: met ? "rgba(34,197,94,0.2)" : "rgba(100,116,139,0.15)",
-          border: met ? "1px solid rgba(34,197,94,0.4)" : "1px solid rgba(100,116,139,0.2)",
-        }}
-      >
-        {met ? (
-          <Check className="h-2.5 w-2.5" style={{ color: "#4ADE80" }} strokeWidth={3} />
-        ) : (
-          <X className="h-2.5 w-2.5" style={{ color: "#475569" }} strokeWidth={3} />
-        )}
-      </div>
-      <span
-        className="text-xs transition-all duration-300"
-        style={{ color: met ? "#4ADE80" : "#475569", fontWeight: met ? 600 : 400 }}
-      >
-        {label}
-      </span>
-    </div>
-  );
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "var(--bg)" }}>
@@ -210,10 +213,10 @@ export default function ForgotPasswordPage() {
               <ShieldCheck className="h-10 w-10" style={{ color: "#4ADE80" }} />
               <div>
                 <p className="font-bold text-base" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}>
-                  Password Reset Successfully!
+                  {t("Password Reset Successfully!")}
                 </p>
                 <p className="text-xs mt-1" style={{ color: "#64748B" }}>
-                  You can now sign in using your new password.
+                  {t("You can now sign in using your new password.")}
                 </p>
               </div>
               <Link
@@ -226,7 +229,7 @@ export default function ForgotPasswordPage() {
                   textDecoration: "none",
                 }}
               >
-                Go to Sign In
+                {t("Go to Sign In")}
               </Link>
             </div>
           )}
@@ -236,7 +239,7 @@ export default function ForgotPasswordPage() {
             <form onSubmit={handleSendResetLink} className="flex flex-col gap-5">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                  Email Address
+                  {t("Email Address")}
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#475569" }}>
@@ -273,7 +276,7 @@ export default function ForgotPasswordPage() {
                   </>
                 ) : (
                   <>
-                    <span>Verify and Reset</span>
+                    <span>{t("Verify and Reset")}</span>
                     <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                   </>
                 )}
@@ -290,13 +293,13 @@ export default function ForgotPasswordPage() {
               >
               <div className="flex items-start gap-2">
                 <FlaskConical className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "#F59E0B" }} strokeWidth={2} />
-                <span><strong style={{ color: "#F59E0B" }}>Testing Sandbox:</strong> Token verification simulated. Set your new password below.</span>
+                <span><strong style={{ color: "#F59E0B" }}>{t("Testing Sandbox:")}</strong> {t("Token verification simulated. Set your new password below.")}</span>
               </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                  New Password
+                  {t("New Password")}
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#475569" }}>
@@ -316,7 +319,7 @@ export default function ForgotPasswordPage() {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                  Confirm New Password
+                  {t("Confirm New Password")}
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#475569" }}>
@@ -340,7 +343,7 @@ export default function ForgotPasswordPage() {
                 style={{ background: "rgba(15,23,42,0.4)", border: "1px solid rgba(255,255,255,0.06)" }}
               >
                 <span className="text-xs font-semibold mb-2 block" style={{ color: "#64748B" }}>
-                  Security Requirements:
+                  {t("Security Requirements:")}
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <PasswordRule met={hasMinLength} label="8+ characters" />
@@ -369,7 +372,7 @@ export default function ForgotPasswordPage() {
                   </>
                 ) : (
                   <>
-                    <span>Commit New Password</span>
+                    <span>{t("Commit New Password")}</span>
                     <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                   </>
                 )}

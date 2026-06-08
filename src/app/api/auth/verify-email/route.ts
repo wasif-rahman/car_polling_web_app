@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       { exists: true, message: "User account verified" },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("Verify email error:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred during email verification" },

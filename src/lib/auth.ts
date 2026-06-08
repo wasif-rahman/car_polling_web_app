@@ -4,6 +4,16 @@ import GoogleProvider from "next-auth/providers/google";
 import { db } from "@/lib/db";
 import bcrypt from "bcrypt";
 
+interface CustomUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string | null;
+  rating?: number | null;
+  vehicleDetails?: string | null;
+}
+
 export const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
@@ -71,10 +81,11 @@ export const authOptions: AuthOptions = {
     },
     async jwt({ token, user, account }) {
       if (user) {
-        token.id = user.id;
-        token.role = (user as any).role;
-        token.rating = (user as any).rating;
-        token.vehicleDetails = (user as any).vehicleDetails;
+        const customUser = user as CustomUser;
+        token.id = customUser.id;
+        token.role = customUser.role;
+        token.rating = customUser.rating;
+        token.vehicleDetails = customUser.vehicleDetails;
       }
 
       if (account?.provider === "google" && token.email) {
@@ -92,10 +103,11 @@ export const authOptions: AuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).rating = token.rating;
-        (session.user as any).vehicleDetails = token.vehicleDetails;
+        const customUser = session.user as CustomUser;
+        customUser.id = token.id as string;
+        customUser.role = token.role as string;
+        customUser.rating = token.rating as number;
+        customUser.vehicleDetails = token.vehicleDetails as string;
       }
       return session;
     }

@@ -1,66 +1,61 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { MapPin, Calendar, Users, DollarSign, ArrowRight, Car, ShieldAlert, Sparkles, AlertTriangle } from "lucide-react";
+import { MapPin, Calendar, Clock, Users, ArrowRight, Car, ShieldAlert, Sparkles, AlertTriangle, Plus, Minus } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import { loadGoogleMapsScript } from "@/components/Map";
+import LocationInput from "@/components/LocationInput";
+import { t } from "@/lib/i18n";
+
+interface CustomUser {
+  id?: string;
+  name?: string | null;
+  email?: string | null;
+  role?: string | null;
+}
+
+interface Vehicle {
+  id: string;
+  brand: string;
+  model: string;
+  year: number;
+  color: string;
+  plateNumber: string;
+}
+
+const formatFullDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
 
 export default function CreateRidePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const [startLocation, setStartLocation] = useState("");
   const [endLocation, setEndLocation] = useState("");
   const [startCoords, setStartCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [endCoords, setEndCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [departureTime, setDepartureTime] = useState("");
+  const [departureDate, setDepartureDate] = useState("");
+  const [timeHour, setTimeHour] = useState("09");
+  const [timeMinute, setTimeMinute] = useState("00");
+  const [timePeriod, setTimePeriod] = useState("AM");
   const [availableSeats, setAvailableSeats] = useState("3");
-  const [pricePerSeat, setPricePerSeat] = useState("15");
+  const [pricePerSeat, setPricePerSeat] = useState("500");
 
-  // Google Places Autocomplete integration
-  useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyA0fY4F3W06R6BuUd_GKNlgZFQ497Luk20";
-    loadGoogleMapsScript(apiKey)
-      .then((google) => {
-        const startInput = document.getElementById("create-start-location-input") as HTMLInputElement;
-        if (startInput) {
-          const autocomplete = new google.maps.places.Autocomplete(startInput, {
-            fields: ["geometry", "formatted_address", "name"],
-          });
-          autocomplete.addListener("place_changed", () => {
-            const place = autocomplete.getPlace();
-            if (place.geometry && place.geometry.location) {
-              const lat = place.geometry.location.lat();
-              const lng = place.geometry.location.lng();
-              setStartCoords({ lat, lng });
-              setStartLocation(place.formatted_address || place.name || "");
-            }
-          });
-        }
-
-        const endInput = document.getElementById("create-end-location-input") as HTMLInputElement;
-        if (endInput) {
-          const autocomplete = new google.maps.places.Autocomplete(endInput, {
-            fields: ["geometry", "formatted_address", "name"],
-          });
-          autocomplete.addListener("place_changed", () => {
-            const place = autocomplete.getPlace();
-            if (place.geometry && place.geometry.location) {
-              const lat = place.geometry.location.lat();
-              const lng = place.geometry.location.lng();
-              setEndCoords({ lat, lng });
-              setEndLocation(place.formatted_address || place.name || "");
-            }
-          });
-        }
-      })
-      .catch((err) => console.error("Places Autocomplete loading error:", err));
-  }, []);
+  // Autocomplete inputs are now handled by the self-contained LocationInput component.
 
   // Vehicles states
-  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
 
@@ -82,8 +77,12 @@ export default function CreateRidePage() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
-    } else if (status === "authenticated" && (session?.user as any).role !== "DRIVER") {
-      setError("Access denied. Only registered drivers can publish rides.");
+    } else if (status === "authenticated" && (session?.user as CustomUser).role !== "DRIVER") {
+      const triggerError = async () => {
+        await Promise.resolve();
+        setError("Access denied. Only registered drivers can publish rides.");
+      };
+      triggerError();
     }
   }, [status, session, router]);
 
@@ -107,8 +106,12 @@ export default function CreateRidePage() {
   };
 
   useEffect(() => {
-    if (status === "authenticated" && (session?.user as any).role === "DRIVER") {
-      fetchVehicles();
+    if (status === "authenticated" && (session?.user as CustomUser).role === "DRIVER") {
+      const triggerFetch = async () => {
+        await Promise.resolve();
+        fetchVehicles();
+      };
+      triggerFetch();
     }
   }, [status, session]);
 
@@ -124,23 +127,29 @@ export default function CreateRidePage() {
     const hours = String(tomorrow.getHours()).padStart(2, "0");
     const minutes = String(tomorrow.getMinutes()).padStart(2, "0");
 
-    setDepartureTime(`${year}-${month}-${day}T${hours}:${minutes}`);
+    const deferSet = async () => {
+      await Promise.resolve();
+      setDepartureDate(`${year}-${month}-${day}`);
+      setTimeHour("09");
+      setTimeMinute("00");
+      setTimePeriod("AM");
+    };
+    deferSet();
   }, []);
 
   const geocodeAddress = async (address: string) => {
     try {
-      // 1. Google Maps Geocoding API with provided key
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyA0fY4F3W06R6BuUd_GKNlgZFQ497Luk20";
-      const googleUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
-      const googleRes = await fetch(googleUrl);
-      const googleData = await googleRes.json();
-      
-      if (googleData && googleData.status === "OK" && googleData.results && googleData.results.length > 0) {
-        const loc = googleData.results[0].geometry.location;
-        return { lat: loc.lat, lng: loc.lng, displayName: googleData.results[0].formatted_address };
+      // 1. Try Photon Geocoding API (Fast and free)
+      const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=1`;
+      const photonRes = await fetch(photonUrl);
+      const photonData = await photonRes.json();
+      if (photonData && photonData.features && photonData.features.length > 0) {
+        const feat = photonData.features[0];
+        const coords = feat.geometry.coordinates;
+        const props = feat.properties;
+        const name = [props.name, props.city, props.state, props.country].filter(Boolean).join(", ");
+        return { lat: coords[1], lng: coords[0], displayName: name };
       }
-
-      console.warn("Google Geocoding unsuccessful. Status:", googleData.status, ". Falling back to Nominatim OSM...");
 
       // 2. Fallback to Nominatim OSM
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
@@ -199,13 +208,14 @@ export default function CreateRidePage() {
         const updatedData = await updatedRes.json();
         setVehicles(updatedData);
         // Set new vehicle as selected
-        const newRegistered = updatedData.find((v: any) => v.plateNumber === newPlateNumber) || updatedData[0];
+        const newRegistered = updatedData.find((v: Vehicle) => v.plateNumber === newPlateNumber) || updatedData[0];
         if (newRegistered) {
           setSelectedVehicleId(newRegistered.id);
         }
       }
-    } catch (err: any) {
-      setAddVehicleError(err.message || "An error occurred during vehicle registration.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred during vehicle registration.";
+      setAddVehicleError(message);
     } finally {
       setAddVehicleLoading(false);
     }
@@ -221,6 +231,14 @@ export default function CreateRidePage() {
         throw new Error("Please select or register a vehicle to offer this ride.");
       }
 
+      let hoursNum = parseInt(timeHour);
+      if (timePeriod === "PM" && hoursNum < 12) {
+        hoursNum += 12;
+      } else if (timePeriod === "AM" && hoursNum === 12) {
+        hoursNum = 0;
+      }
+      const formattedHours = String(hoursNum).padStart(2, "0");
+      const departureTime = `${departureDate}T${formattedHours}:${timeMinute}`;
       const parsedDate = new Date(departureTime);
       if (isNaN(parsedDate.getTime()) || parsedDate.getTime() <= Date.now()) {
         throw new Error("Please select a valid departure date and time in the future.");
@@ -272,8 +290,9 @@ export default function CreateRidePage() {
 
       setSuccess(true);
       setTimeout(() => { router.push("/dashboard"); }, 1500);
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -293,7 +312,7 @@ export default function CreateRidePage() {
     );
   }
 
-  if (status === "authenticated" && (session?.user as any).role !== "DRIVER") {
+  if (status === "authenticated" && (session?.user as CustomUser).role !== "DRIVER") {
     return (
       <div className="flex flex-col min-h-screen" style={{ background: "var(--bg)" }}>
         <Navbar />
@@ -318,10 +337,10 @@ export default function CreateRidePage() {
               className="text-xl font-bold"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}
             >
-              Driver Registration Required
+              {t("Driver Registration Required")}
             </h1>
             <p className="text-sm leading-relaxed" style={{ color: "#64748B" }}>
-              Your account is set to <strong style={{ color: "#93C5FD" }}>Passenger</strong>. To offer rides, register a new account with the <strong style={{ color: "#4ADE80" }}>Driver</strong> role and vehicle credentials.
+              {t("Your account is set to ")}<strong style={{ color: "#93C5FD" }}>{t("Passenger")}</strong>. {t("To offer rides, register a new account with the ")}<strong style={{ color: "#4ADE80" }}>{t("Driver")}</strong>{t(" role and vehicle credentials.")}
             </p>
             <button
               onClick={() => router.push("/register")}
@@ -333,7 +352,7 @@ export default function CreateRidePage() {
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
-              Register as Driver
+              {t("Register as Driver")}
             </button>
           </div>
         </main>
@@ -377,16 +396,16 @@ export default function CreateRidePage() {
                 className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg uppercase tracking-widest mb-3"
                 style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)", color: "#4ADE80" }}
               >
-                Driver Module
+                {t("Driver Module")}
               </div>
               <h1
                 className="text-2xl font-black tracking-tight"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}
               >
-                Publish a New Ride
+                {t("Publish a New Ride")}
               </h1>
               <p className="text-sm mt-1" style={{ color: "#64748B" }}>
-                Share your empty seats with travelers
+                {t("Share your empty seats with travelers")}
               </p>
             </div>
             <div
@@ -418,7 +437,7 @@ export default function CreateRidePage() {
               style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)", color: "#4ADE80" }}
             >
               <Sparkles className="h-4 w-4 shrink-0" />
-              <span>Ride published successfully! Navigating to dashboard...</span>
+              <span>{t("Ride published successfully! Navigating to dashboard...")}</span>
             </div>
           )}
 
@@ -434,7 +453,7 @@ export default function CreateRidePage() {
             >
               <div className="flex justify-between items-center">
                 <label className="text-xs font-bold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                  Select Vehicle
+                  {t("Select Vehicle")}
                 </label>
                 <button
                   type="button"
@@ -442,7 +461,7 @@ export default function CreateRidePage() {
                   className="text-xs font-bold transition-all flex items-center gap-1"
                   style={{ color: "#22C55E", background: "none", border: "none", cursor: "pointer" }}
                 >
-                  {showAddVehicle ? "Cancel Register" : "+ Register Another Vehicle"}
+                  {showAddVehicle ? t("Cancel Register") : t("+ Register Another Vehicle")}
                 </button>
               </div>
 
@@ -450,14 +469,14 @@ export default function CreateRidePage() {
                 vehicles.length === 0 ? (
                   <div className="text-center py-3 flex flex-col items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-amber-500" />
-                    <p className="text-xs text-slate-400">No vehicles registered yet. Please register your car below.</p>
+                    <p className="text-xs text-slate-400">{t("No vehicles registered yet. Please register your car below.")}</p>
                     <button
                       type="button"
                       onClick={() => setShowAddVehicle(true)}
                       className="px-4 py-2 mt-1 text-xs font-bold text-white rounded-lg transition-all"
                       style={{ background: "linear-gradient(135deg, #22C55E, #16A34A)", cursor: "pointer" }}
                     >
-                      Register Car Now
+                      {t("Register Car Now")}
                     </button>
                   </div>
                 ) : (
@@ -482,7 +501,7 @@ export default function CreateRidePage() {
               ) : (
                 /* Inline Add Vehicle Sub-Form */
                 <div className="flex flex-col gap-3.5 p-3 rounded-lg bg-slate-900/50 border border-slate-800 animate-slideDown">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Register New Vehicle</h4>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">{t("Register New Vehicle")}</h4>
                   
                   {addVehicleError && (
                     <div className="p-2.5 rounded bg-rose-950/30 border border-rose-800/50 text-[11px] text-rose-400">
@@ -492,7 +511,7 @@ export default function CreateRidePage() {
 
                   <div className="grid grid-cols-2 gap-2.5">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Brand</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{t("Brand")}</label>
                       <input
                         type="text"
                         placeholder="e.g. Toyota"
@@ -502,7 +521,7 @@ export default function CreateRidePage() {
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Model</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{t("Model")}</label>
                       <input
                         type="text"
                         placeholder="e.g. Corolla"
@@ -515,7 +534,7 @@ export default function CreateRidePage() {
 
                   <div className="grid grid-cols-3 gap-2">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Year</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{t("Year")}</label>
                       <input
                         type="number"
                         min="1990"
@@ -527,7 +546,7 @@ export default function CreateRidePage() {
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Color</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{t("Color")}</label>
                       <input
                         type="text"
                         placeholder="e.g. Black"
@@ -537,7 +556,7 @@ export default function CreateRidePage() {
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Plate No.</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{t("Plate No.")}</label>
                       <input
                         type="text"
                         placeholder="LE-7890"
@@ -569,77 +588,131 @@ export default function CreateRidePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                  Start Location
+                  {t("Start Location")}
                 </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#475569" }}>
-                    <MapPin className="h-4 w-4" style={{ color: "#22C55E" }} />
-                  </span>
-                  <input
-                    id="create-start-location-input"
-                    type="text"
-                    required
-                    placeholder="e.g. Lahore, Pakistan"
-                    value={startLocation}
-                    onChange={(e) => {
-                      setStartLocation(e.target.value);
-                      setStartCoords(null);
-                    }}
-                    className="input-dark"
-                    style={{ paddingLeft: "44px" }}
-                  />
-                </div>
+                <LocationInput
+                  id="create-start-location-input"
+                  placeholder="e.g. Lahore, Pakistan"
+                  value={startLocation}
+                  onChange={setStartLocation}
+                  onSelectCoords={setStartCoords}
+                  icon={<MapPin className="h-4 w-4" style={{ color: "#22C55E" }} />}
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                  Destination
+                  {t("Destination")}
                 </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#475569" }}>
-                    <MapPin className="h-4 w-4" style={{ color: "#06B6D4" }} />
-                  </span>
-                  <input
-                    id="create-end-location-input"
-                    type="text"
-                    required
-                    placeholder="e.g. Islamabad, Pakistan"
-                    value={endLocation}
-                    onChange={(e) => {
-                      setEndLocation(e.target.value);
-                      setEndCoords(null);
-                    }}
-                    className="input-dark"
-                    style={{ paddingLeft: "44px" }}
-                  />
-                </div>
+                <LocationInput
+                  id="create-end-location-input"
+                  placeholder="e.g. Islamabad, Pakistan"
+                  value={endLocation}
+                  onChange={setEndLocation}
+                  onSelectCoords={setEndCoords}
+                  icon={<MapPin className="h-4 w-4" style={{ color: "#06B6D4" }} />}
+                />
               </div>
             </div>
 
-            {/* Time, Seats & Pricing */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1.5 sm:col-span-1">
+            {/* Time & Date Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Departure Date */}
+              <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                  Departure Time
+                  {t("Departure Date")}
                 </label>
-                <div className="relative">
+                <div 
+                  className="relative cursor-pointer"
+                  onClick={() => dateInputRef.current?.showPicker?.()}
+                >
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#475569" }}>
                     <Calendar className="h-4 w-4" />
                   </span>
                   <input
-                    type="datetime-local"
+                    ref={dateInputRef}
+                    type="date"
                     required
-                    value={departureTime}
-                    onChange={(e) => setDepartureTime(e.target.value)}
-                    className="input-dark"
+                    value={departureDate}
+                    onChange={(e) => setDepartureDate(e.target.value)}
+                    className="input-dark w-full cursor-pointer"
                     style={{ paddingLeft: "44px", colorScheme: "dark" }}
                   />
                 </div>
+                {departureDate && (
+                  <div className="text-[11px] font-semibold text-emerald-400 mt-1 flex items-center gap-1.5 animate-fadeIn">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    <span>{formatFullDate(departureDate)}</span>
+                  </div>
+                )}
               </div>
 
+              {/* Departure Time */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                  Seats Offered
+                  {t("Departure Time")}
+                </label>
+                <div className="flex gap-2">
+                  {/* Hour */}
+                  <div className="relative flex-1">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3" style={{ color: "#475569" }}>
+                      <Clock className="h-3.5 w-3.5" />
+                    </span>
+                    <select
+                      value={timeHour}
+                      onChange={(e) => setTimeHour(e.target.value)}
+                      className="input-dark cursor-pointer w-full"
+                      style={{ paddingLeft: "34px", colorScheme: "dark" }}
+                    >
+                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((h) => (
+                        <option key={h} value={h} style={{ background: "#1E293B" }}>
+                          {h}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Minute */}
+                  <div className="relative flex-1">
+                    <select
+                      value={timeMinute}
+                      onChange={(e) => setTimeMinute(e.target.value)}
+                      className="input-dark cursor-pointer w-full"
+                      style={{ colorScheme: "dark" }}
+                    >
+                      {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
+                        <option key={m} value={m} style={{ background: "#1E293B" }}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* AM/PM */}
+                  <div className="relative w-20">
+                    <select
+                      value={timePeriod}
+                      onChange={(e) => setTimePeriod(e.target.value)}
+                      className="input-dark cursor-pointer w-full text-center"
+                      style={{ colorScheme: "dark" }}
+                    >
+                      {["AM", "PM"].map((p) => (
+                        <option key={p} value={p} style={{ background: "#1E293B" }}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Seats & Pricing Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Seats Offered */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
+                  {t("Seats Offered")}
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#475569" }}>
@@ -648,38 +721,65 @@ export default function CreateRidePage() {
                   <select
                     value={availableSeats}
                     onChange={(e) => setAvailableSeats(e.target.value)}
-                    className="input-dark cursor-pointer"
+                    className="input-dark cursor-pointer w-full"
                     style={{ paddingLeft: "44px", colorScheme: "dark" }}
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
                       <option key={s} value={s} style={{ background: "#1E293B" }}>
-                        {s} {s === 1 ? "seat" : "seats"}
+                        {s} {s === 1 ? t("seat") : t("seats")}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
+              {/* Price per Seat */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                  Price/Seat (PKR)
+                  {t("Price/Seat (PKR)")}
                 </label>
-                <div className="relative">
-                  <span
-                    className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-xs font-bold"
-                    style={{ color: "#22C55E" }}
+                <div className="flex items-center gap-2.5">
+                  {/* Decrease Button */}
+                  <button
+                    type="button"
+                    onClick={() => setPricePerSeat(prev => {
+                      const val = Math.max(1, parseInt(prev || "0") - 5);
+                      return String(val);
+                    })}
+                    className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all duration-200 cursor-pointer shrink-0"
+                    title="Decrease Price by 5"
                   >
-                    Rs
-                  </span>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={pricePerSeat}
-                    onChange={(e) => setPricePerSeat(e.target.value)}
-                    className="input-dark"
-                    style={{ paddingLeft: "36px" }}
-                  />
+                    <Minus className="h-4 w-4" strokeWidth={2.5} />
+                  </button>
+
+                  {/* Input displaying the price */}
+                  <div className="relative flex-1">
+                    <span className="absolute inset-y-0 left-3.5 flex items-center text-xs font-bold text-emerald-400">
+                      Rs
+                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={pricePerSeat}
+                      onChange={(e) => setPricePerSeat(e.target.value)}
+                      className="input-dark w-full text-center text-sm font-bold text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      style={{ paddingLeft: "36px", paddingRight: "12px" }}
+                    />
+                  </div>
+
+                  {/* Increase Button */}
+                  <button
+                    type="button"
+                    onClick={() => setPricePerSeat(prev => {
+                      const val = parseInt(prev || "0") + 5;
+                      return String(val);
+                    })}
+                    className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-all duration-200 cursor-pointer shrink-0"
+                    title="Increase Price by 5"
+                  >
+                    <Plus className="h-4 w-4" strokeWidth={2.5} />
+                  </button>
                 </div>
               </div>
             </div>
@@ -694,7 +794,7 @@ export default function CreateRidePage() {
               }}
             >
               <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "#22C55E" }} strokeWidth={2} />
-              <span>We calculate routing paths, total distance, and duration estimates instantly using the Google Maps directions service.</span>
+              <span>{t("We calculate routing paths, total distance, and duration estimates instantly using our premium open-source directions routing service.")}</span>
             </div>
 
             {/* Submit */}
@@ -726,11 +826,11 @@ export default function CreateRidePage() {
                     className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
                     style={{ animation: "spin 1s linear infinite" }}
                   />
-                  <span>Publishing Ride...</span>
+                  <span>{t("Publishing Ride...")}</span>
                 </>
               ) : (
                 <>
-                  <span>Publish Ride Offer</span>
+                  <span>{t("Publish Ride Offer")}</span>
                   <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                 </>
               )}

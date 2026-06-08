@@ -8,7 +8,6 @@ import {
   MapPin,
   Calendar,
   Users,
-  DollarSign,
   Check,
   X,
   ShieldAlert,
@@ -22,13 +21,71 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
+import { t } from "@/lib/i18n";
+
+interface CustomUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string | null;
+}
+
+interface Driver {
+  id: string;
+  name: string;
+  email: string;
+  rating?: number;
+  vehicleDetails?: string | null;
+}
+
+interface Vehicle {
+  brand: string;
+  model: string;
+  color: string;
+  plateNumber: string;
+}
+
+interface Passenger {
+  id: string;
+  name: string;
+  email: string;
+  rating: number;
+}
+
+interface Booking {
+  id: string;
+  rideId: string;
+  passengerId: string;
+  passenger: Passenger;
+  seatsBooked: number;
+  status: string;
+  createdAt: string;
+  ride: Ride;
+}
+
+interface Ride {
+  id: string;
+  driverId: string;
+  driver: Driver;
+  origin: string;
+  destination: string;
+  startLocation: string;
+  endLocation: string;
+  departureTime: string;
+  pricePerSeat: number;
+  availableSeats: number;
+  totalSeats: number;
+  status: string;
+  bookings: Booking[];
+  vehicle?: Vehicle | null;
+}
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [rides, setRides] = useState<any[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
@@ -57,7 +114,7 @@ export default function DashboardPage() {
       setLoading(true);
       setErrorMsg("");
 
-      const role = (session?.user as any)?.role;
+      const role = (session?.user as CustomUser)?.role;
 
       if (role === "DRIVER") {
         const res = await fetch("/api/driver/dashboard");
@@ -76,8 +133,9 @@ export default function DashboardPage() {
           throw new Error("Failed to load passenger dashboard");
         }
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || "An error occurred");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred";
+      setErrorMsg(message);
     } finally {
       setLoading(false);
     }
@@ -85,8 +143,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      fetchData();
+      const init = async () => {
+        await Promise.resolve();
+        fetchData();
+      };
+      init();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, session]);
 
   const handleBookingAction = async (
@@ -112,8 +175,9 @@ export default function DashboardPage() {
 
       setSuccessMsg(`Booking successfully ${action.toLowerCase()}!`);
       fetchData();
-    } catch (err: any) {
-      setErrorMsg(err.message || "An error occurred");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred";
+      setErrorMsg(message);
     } finally {
       setActionLoading(null);
       setTimeout(() => {
@@ -137,8 +201,9 @@ export default function DashboardPage() {
       
       setSuccessMsg(`Ride successfully marked as ${nextStatus.toLowerCase()}!`);
       fetchData();
-    } catch (err: any) {
-      setErrorMsg(err.message || "An error occurred");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred";
+      setErrorMsg(message);
     }
   };
 
@@ -169,8 +234,9 @@ export default function DashboardPage() {
         setShowReviewModal(false);
         fetchData();
       }, 1500);
-    } catch (err: any) {
-      setReviewError(err.message || "An error occurred");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred";
+      setReviewError(message);
     } finally {
       setReviewLoading(false);
     }
@@ -193,7 +259,7 @@ export default function DashboardPage() {
               }}
             />
             <p className="text-sm font-semibold" style={{ color: "#64748B" }}>
-              Loading dashboard...
+              {t("Loading dashboard...")}
             </p>
           </div>
         </div>
@@ -201,21 +267,34 @@ export default function DashboardPage() {
     );
   }
 
-  const role = (session?.user as any)?.role;
+  const role = (session?.user as CustomUser)?.role;
 
   const StatusBadge = ({ status }: { status: string }) => {
-    const styles: Record<string, React.CSSProperties> = {
-      PENDING: { background: "rgba(245,158,11,0.12)", color: "#F59E0B", border: "1px solid rgba(245,158,11,0.25)" },
-      APPROVED: { background: "rgba(34,197,94,0.12)", color: "#4ADE80", border: "1px solid rgba(34,197,94,0.25)" },
-      REJECTED: { background: "rgba(244,63,94,0.12)", color: "#FB7185", border: "1px solid rgba(244,63,94,0.25)" },
-      CANCELLED: { background: "rgba(244,63,94,0.12)", color: "#FB7185", border: "1px solid rgba(244,63,94,0.25)" },
-      UPCOMING: { background: "rgba(6,182,212,0.12)", color: "#22D3EE", border: "1px solid rgba(6,182,212,0.25)" },
-      COMPLETED: { background: "rgba(100,116,139,0.12)", color: "#94A3B8", border: "1px solid rgba(100,116,139,0.25)" },
-    };
+    let badgeStyle: React.CSSProperties;
+    switch (status) {
+      case "PENDING":
+        badgeStyle = { background: "rgba(245,158,11,0.12)", color: "#F59E0B", border: "1px solid rgba(245,158,11,0.25)" };
+        break;
+      case "APPROVED":
+        badgeStyle = { background: "rgba(34,197,94,0.12)", color: "#4ADE80", border: "1px solid rgba(34,197,94,0.25)" };
+        break;
+      case "REJECTED":
+      case "CANCELLED":
+        badgeStyle = { background: "rgba(244,63,94,0.12)", color: "#FB7185", border: "1px solid rgba(244,63,94,0.25)" };
+        break;
+      case "UPCOMING":
+        badgeStyle = { background: "rgba(6,182,212,0.12)", color: "#22D3EE", border: "1px solid rgba(6,182,212,0.25)" };
+        break;
+      case "COMPLETED":
+        badgeStyle = { background: "rgba(100,116,139,0.12)", color: "#94A3B8", border: "1px solid rgba(100,116,139,0.25)" };
+        break;
+      default:
+        badgeStyle = { background: "rgba(6,182,212,0.12)", color: "#22D3EE", border: "1px solid rgba(6,182,212,0.25)" };
+    }
     return (
       <span
         className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg"
-        style={styles[status] || styles.UPCOMING}
+        style={badgeStyle}
       >
         {status}
       </span>
@@ -252,10 +331,10 @@ export default function DashboardPage() {
               className="text-2xl font-black tracking-tight"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}
             >
-            Welcome back, {session?.user?.name}!
+            {t("Welcome back, ")}{session?.user?.name}!
             </h1>
             <p className="text-sm mt-1" style={{ color: "#64748B" }}>
-              Manage your rides, view seat requests, and coordinate travels from your dashboard.
+              {t("Manage your rides, view seat requests, and coordinate travels from your dashboard.")}
             </p>
           </div>
 
@@ -306,7 +385,7 @@ export default function DashboardPage() {
                   className="text-lg font-black uppercase tracking-wider"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}
                 >
-                  My Offered Rides
+                  {t("My Offered Rides")}
                 </h2>
                 <p className="text-xs mt-0.5" style={{ color: "#475569" }}>
                   {rides.length} {rides.length === 1 ? "ride" : "rides"} posted
@@ -349,10 +428,10 @@ export default function DashboardPage() {
                     className="text-base font-bold"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}
                   >
-                    No rides posted yet
+                    {t("No rides posted yet")}
                   </h3>
                   <p className="text-xs mt-1.5 max-w-sm leading-relaxed" style={{ color: "#475569" }}>
-                    Earn money, split fuel expenses, and lower your carbon footprint by publishing your upcoming trips.
+                    {t("Earn money, split fuel expenses, and lower your carbon footprint by publishing your upcoming trips.")}
                   </p>
                 </div>
                 <Link
@@ -371,7 +450,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6">
-                {rides.map((ride: any, idx: number) => (
+                {rides.map((ride: Ride, idx: number) => (
                   <div
                     key={ride.id}
                     className="rounded-2xl overflow-hidden animate-slideUp transition-all duration-300"
@@ -410,14 +489,14 @@ export default function DashboardPage() {
                           {ride.availableSeats} seats available
                         </span>
                         <span className="text-sm font-bold" style={{ color: "#22C55E" }}>
-                          Rs. {ride.pricePerSeat}/seat
+                          {t("Rs. ")}{ride.pricePerSeat}{t("/seat")}
                         </span>
                         {ride.status === "UPCOMING" && (
                           <button
                             onClick={() => handleUpdateRideStatus(ride.id, "ACTIVE")}
                             className="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/30 transition-all cursor-pointer"
                           >
-                            Start Ride
+                            {t("Start Ride")}
                           </button>
                         )}
                         {ride.status === "ACTIVE" && (
@@ -425,7 +504,7 @@ export default function DashboardPage() {
                             onClick={() => handleUpdateRideStatus(ride.id, "COMPLETED")}
                             className="px-3 py-1 text-xs font-bold rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 hover:bg-blue-600/30 transition-all cursor-pointer"
                           >
-                            Complete Ride
+                            {t("Complete Ride")}
                           </button>
                         )}
                         <StatusBadge status={ride.status} />
@@ -436,7 +515,7 @@ export default function DashboardPage() {
                     <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-widest block mb-1.5" style={{ color: "#475569" }}>
-                          Pickup From
+                          {t("Pickup From")}
                         </span>
                         <div className="flex items-start gap-2">
                           <MapPin className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#22C55E" }} />
@@ -447,7 +526,7 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-widest block mb-1.5" style={{ color: "#475569" }}>
-                          Destination To
+                          {t("Destination To")}
                         </span>
                         <div className="flex items-start gap-2">
                           <Navigation className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#06B6D4" }} />
@@ -461,16 +540,16 @@ export default function DashboardPage() {
                     {/* Booking Requests */}
                     <div className="px-6 py-5">
                       <span className="text-[10px] font-bold uppercase tracking-widest block mb-4" style={{ color: "#475569" }}>
-                        Passenger Seat Requests ({ride.bookings.length})
+                        {t("Passenger Seat Requests (")}{ride.bookings.length}{t(")")}
                       </span>
 
                       {ride.bookings.length === 0 ? (
                         <p className="text-xs italic" style={{ color: "#334155" }}>
-                          No requests yet for this ride.
+                          {t("No requests yet for this ride.")}
                         </p>
                       ) : (
                         <div className="flex flex-col gap-3">
-                          {ride.bookings.map((booking: any) => (
+                          {ride.bookings.map((booking: Booking) => (
                             <div
                               key={booking.id}
                               className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 p-4 rounded-xl"
@@ -584,7 +663,7 @@ export default function DashboardPage() {
                   className="text-lg font-black uppercase tracking-wider"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}
                 >
-                  My Booked Travels
+                  {t("My Booked Travels")}
                 </h2>
                 <p className="text-xs mt-0.5" style={{ color: "#475569" }}>
                   {bookings.length} {bookings.length === 1 ? "booking" : "bookings"} found
@@ -627,10 +706,10 @@ export default function DashboardPage() {
                     className="text-base font-bold"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}
                   >
-                    No bookings yet
+                    {t("No bookings yet")}
                   </h3>
                   <p className="text-xs mt-1.5 max-w-sm leading-relaxed" style={{ color: "#475569" }}>
-                    Search active driver pools, view pricing details, and request empty seats instantly for your upcoming trips.
+                    {t("Search active driver pools, view pricing details, and request empty seats instantly for your upcoming trips.")}
                   </p>
                 </div>
                 <Link
@@ -649,7 +728,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6">
-                {bookings.map((booking: any, idx: number) => (
+                {bookings.map((booking: Booking, idx: number) => (
                   <div
                     key={booking.id}
                     className="rounded-2xl overflow-hidden animate-slideUp transition-all duration-300"
@@ -687,12 +766,12 @@ export default function DashboardPage() {
                         </div>
                         <div>
                           <p className="text-sm font-bold" style={{ color: "#F8FAFC" }}>
-                            Driver: {booking.ride.driver.name}
+                            {t("Driver: ")}{booking.ride.driver.name}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="flex items-center gap-1 text-xs" style={{ color: "#F59E0B" }}>
                               <Star className="h-3 w-3 fill-current" strokeWidth={0} />
-                              {booking.ride.driver.rating.toFixed(1)}
+                              {(booking.ride.driver.rating ?? 5.0).toFixed(1)}
                             </span>
                             <span className="text-xs" style={{ color: "#475569" }}>
                               • {booking.ride.vehicle ? `${booking.ride.vehicle.color} ${booking.ride.vehicle.brand} ${booking.ride.vehicle.model}` : (booking.ride.driver.vehicleDetails || "Verified Vehicle")}
@@ -703,7 +782,7 @@ export default function DashboardPage() {
 
                       <div className="flex items-center gap-4">
                         <span className="text-sm font-bold" style={{ color: "#4ADE80" }}>
-                          Rs. {booking.seatsBooked * booking.ride.pricePerSeat} Total
+                          {t("Rs. ")}{booking.seatsBooked * booking.ride.pricePerSeat}{t(" Total")}
                         </span>
                         <StatusBadge status={booking.status} />
                       </div>
@@ -713,7 +792,7 @@ export default function DashboardPage() {
                     <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-widest block mb-1.5" style={{ color: "#475569" }}>
-                          Start Location
+                          {t("Start Location")}
                         </span>
                         <div className="flex items-start gap-2">
                           <MapPin className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#22C55E" }} />
@@ -724,7 +803,7 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-widest block mb-1.5" style={{ color: "#475569" }}>
-                          Destination
+                          {t("Destination")}
                         </span>
                         <div className="flex items-start gap-2">
                           <Navigation className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#06B6D4" }} />
@@ -743,7 +822,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: "#64748B" }}>
                         <Calendar className="h-4 w-4" style={{ color: "#3B82F6" }} />
                         <span>
-                          Departure:{" "}
+                          {t("Departure: ")}{" "}
                           {new Date(booking.ride.departureTime).toLocaleString("en-US", {
                             dateStyle: "medium",
                             timeStyle: "short",
@@ -765,7 +844,7 @@ export default function DashboardPage() {
                             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(244,63,94,0.18)"; }}
                             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(244,63,94,0.1)"; }}
                           >
-                            Cancel Request
+                            {t("Cancel Request")}
                           </button>
                         )}
                         {booking.status === "APPROVED" && (
@@ -847,8 +926,8 @@ export default function DashboardPage() {
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-white/5 bg-slate-900/40 flex justify-between items-center">
               <div>
-                <h3 className="text-base font-black text-slate-100 uppercase tracking-wider">Rate Your Journey</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Share feedback for Driver {reviewDriverName}</p>
+                <h3 className="text-base font-black text-slate-100 uppercase tracking-wider">{t("Rate Your Journey")}</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">{t("Share feedback for Driver ")}{reviewDriverName}</p>
               </div>
               <button 
                 onClick={() => setShowReviewModal(false)}
@@ -870,14 +949,14 @@ export default function DashboardPage() {
                   <div className="h-12 w-12 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
                     <Check className="h-6 w-6 text-emerald-400" strokeWidth={3} />
                   </div>
-                  <h4 className="text-sm font-bold text-slate-100">Feedback Submitted!</h4>
-                  <p className="text-xs text-slate-400">Thank you for rating your ride. Updating dashboard...</p>
+                  <h4 className="text-sm font-bold text-slate-100">{t("Feedback Submitted!")}</h4>
+                  <p className="text-xs text-slate-400">{t("Thank you for rating your ride. Updating dashboard...")}</p>
                 </div>
               ) : (
                 <>
                   {/* Rating Stars Selector */}
                   <div className="flex flex-col items-center gap-2 my-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Select Rating</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t("Select Rating")}</span>
                     <div className="flex items-center gap-2">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
@@ -904,7 +983,7 @@ export default function DashboardPage() {
                   {/* Comment input */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                      Write a Comment (Optional)
+                      {t("Write a Comment (Optional)")}
                     </label>
                     <textarea
                       placeholder="Tell us about the driver's driving, vehicle cleanliness, or pleasant conversation..."

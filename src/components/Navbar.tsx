@@ -1,9 +1,20 @@
+
+
+
 "use client";
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Share2, Search, PlusCircle, LogOut, User, Menu, X, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
+import { t } from "@/lib/i18n";
+
+interface CustomUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string | null;
+}
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -34,19 +45,11 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div
-                className="relative p-1.5 rounded-lg transition-all duration-300 group-hover:scale-105"
-                style={{
-                  background: "linear-gradient(135deg, rgba(34,197,94,0.2), rgba(6,182,212,0.2))",
-                  border: "1px solid rgba(34,197,94,0.3)",
-                }}
-              >
-                <Share2
-                  className="h-5 w-5"
-                  style={{ color: "#22C55E" }}
-                  strokeWidth={2.5}
-                />
-              </div>
+              <img
+                src="/logo.png"
+                alt="Pooler Logo"
+                className="h-10 w-auto rounded-lg object-contain transition-all duration-300 group-hover:scale-105"
+              />
               <span
                 className="font-bold text-lg tracking-tight"
                 style={{
@@ -57,7 +60,7 @@ export default function Navbar() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                ShareMyRide
+                {t("Pooler")}
               </span>
             </Link>
           </div>
@@ -127,12 +130,12 @@ export default function Navbar() {
                     <span
                       className="inline-block px-2 py-0.5 text-[9px] font-bold rounded mt-0.5 tracking-widest uppercase"
                       style={
-                        (session.user as any).role === "DRIVER"
+                        (session.user as CustomUser).role === "DRIVER"
                           ? { background: "rgba(34,197,94,0.15)", color: "#4ADE80", border: "1px solid rgba(34,197,94,0.3)" }
                           : { background: "rgba(59,130,246,0.15)", color: "#93C5FD", border: "1px solid rgba(59,130,246,0.3)" }
                       }
                     >
-                      {(session.user as any).role}
+                      {(session.user as CustomUser).role}
                     </span>
                   </div>
                   <button
@@ -161,7 +164,7 @@ export default function Navbar() {
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#F8FAFC"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#94A3B8"; }}
                   >
-                    Sign In
+                    {t("Sign In")}
                   </Link>
                   <Link
                     href="/register"
@@ -271,12 +274,12 @@ export default function Navbar() {
                 <span
                   className="px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-widest"
                   style={
-                    (session.user as any).role === "DRIVER"
+                    (session.user as CustomUser).role === "DRIVER"
                       ? { background: "rgba(34,197,94,0.15)", color: "#4ADE80", border: "1px solid rgba(34,197,94,0.3)" }
                       : { background: "rgba(59,130,246,0.15)", color: "#93C5FD", border: "1px solid rgba(59,130,246,0.3)" }
                   }
                 >
-                  {(session.user as any).role}
+                  {(session.user as CustomUser).role}
                 </span>
               </div>
               <button
@@ -304,7 +307,7 @@ export default function Navbar() {
                   border: "1px solid rgba(255,255,255,0.08)",
                 }}
               >
-                Sign In
+                {t("Sign In")}
               </Link>
               <Link
                 href="/register"

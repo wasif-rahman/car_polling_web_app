@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       { message: "Password updated successfully!" },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("Password reset error:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred during password reset" },

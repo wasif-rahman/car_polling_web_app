@@ -6,6 +6,37 @@ import Link from "next/link";
 import { Car, Mail, Lock, User, ShieldAlert, ArrowRight, ShieldCheck, Check, X, UserRound } from "lucide-react";
 import { signIn } from "next-auth/react";
 import Navbar from "@/components/Navbar";
+import { t } from "@/lib/i18n";
+
+const PasswordRule = ({
+  met,
+  label,
+}: {
+  met: boolean;
+  label: string;
+}) => (
+  <div className="flex items-center gap-1.5">
+    <div
+      className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
+      style={{
+        background: met ? "rgba(34,197,94,0.2)" : "rgba(100,116,139,0.15)",
+        border: met ? "1px solid rgba(34,197,94,0.4)" : "1px solid rgba(100,116,139,0.2)",
+      }}
+    >
+      {met ? (
+        <Check className="h-2.5 w-2.5" style={{ color: "#4ADE80" }} strokeWidth={3} />
+      ) : (
+        <X className="h-2.5 w-2.5" style={{ color: "#475569" }} strokeWidth={3} />
+      )}
+    </div>
+    <span
+      className="text-xs transition-all duration-300"
+      style={{ color: met ? "#4ADE80" : "#475569", fontWeight: met ? 600 : 400 }}
+    >
+      {label}
+    </span>
+  </div>
+);
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -79,42 +110,13 @@ export default function RegisterPage() {
       setTimeout(() => {
         router.push("/login");
       }, 2000);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
-
-  const PasswordRule = ({
-    met,
-    label,
-  }: {
-    met: boolean;
-    label: string;
-  }) => (
-    <div className="flex items-center gap-1.5">
-      <div
-        className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
-        style={{
-          background: met ? "rgba(34,197,94,0.2)" : "rgba(100,116,139,0.15)",
-          border: met ? "1px solid rgba(34,197,94,0.4)" : "1px solid rgba(100,116,139,0.2)",
-        }}
-      >
-        {met ? (
-          <Check className="h-2.5 w-2.5" style={{ color: "#4ADE80" }} strokeWidth={3} />
-        ) : (
-          <X className="h-2.5 w-2.5" style={{ color: "#475569" }} strokeWidth={3} />
-        )}
-      </div>
-      <span
-        className="text-xs transition-all duration-300"
-        style={{ color: met ? "#4ADE80" : "#475569", fontWeight: met ? 600 : 400 }}
-      >
-        {label}
-      </span>
-    </div>
-  );
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "var(--bg)" }}>
@@ -151,24 +153,22 @@ export default function RegisterPage() {
         >
           {/* Header */}
           <div className="flex flex-col items-center text-center mb-8">
-            <div
-              className="p-3.5 rounded-2xl mb-5"
+            <img
+              src="/logo.png"
+              alt="Pooler Logo"
+              className="h-16 w-auto rounded-2xl mb-5 object-contain"
               style={{
-                background: "linear-gradient(135deg, rgba(34,197,94,0.15), rgba(6,182,212,0.1))",
-                border: "1px solid rgba(34,197,94,0.25)",
                 boxShadow: "0 0 20px rgba(34,197,94,0.15)",
               }}
-            >
-              <Car className="h-8 w-8" style={{ color: "#22C55E" }} strokeWidth={2} />
-            </div>
+            />
             <h1
               className="text-2xl font-black tracking-tight"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#F8FAFC" }}
             >
-              Create your account
+              {t("Create your account")}
             </h1>
             <p className="text-sm mt-1.5" style={{ color: "#64748B" }}>
-              Join ShareMyRide and start saving today
+              {t("Join Pooler and start saving today")}
             </p>
           </div>
 
@@ -198,7 +198,7 @@ export default function RegisterPage() {
               }}
             >
               <ShieldCheck className="h-4 w-4 shrink-0" />
-              <span>Account created! Redirecting to login...</span>
+              <span>{t("Account created! Redirecting to login...")}</span>
             </div>
           )}
 
@@ -206,7 +206,7 @@ export default function RegisterPage() {
             {/* Full Name */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                Full Name
+                {t("Full Name")}
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#475569" }}>
@@ -227,7 +227,7 @@ export default function RegisterPage() {
             {/* Email */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                Email Address
+                {t("Email Address")}
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#475569" }}>
@@ -248,7 +248,7 @@ export default function RegisterPage() {
             {/* Password */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                Password
+                {t("Password")}
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5" style={{ color: "#475569" }}>
@@ -274,7 +274,7 @@ export default function RegisterPage() {
                 }}
               >
                 <span className="text-xs font-semibold mb-2 block" style={{ color: "#64748B" }}>
-                  Security Requirements:
+                  {t("Security Requirements:")}
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <PasswordRule met={hasMinLength} label="8+ characters" />
@@ -288,7 +288,7 @@ export default function RegisterPage() {
             {/* Role Select */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                I want to join as a
+                {t("I want to join as a")}
               </label>
               <div className="grid grid-cols-2 gap-3">
                 {([("PASSENGER" as const), ("DRIVER" as const)]).map((r) => (
@@ -329,7 +329,7 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                      Car Brand
+                      {t("Car Brand")}
                     </label>
                     <input
                       type="text"
@@ -342,7 +342,7 @@ export default function RegisterPage() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                      Car Model
+                      {t("Car Model")}
                     </label>
                     <input
                       type="text"
@@ -358,7 +358,7 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                      Year
+                      {t("Year")}
                     </label>
                     <input
                       type="number"
@@ -373,7 +373,7 @@ export default function RegisterPage() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                      Color
+                      {t("Color")}
                     </label>
                     <input
                       type="text"
@@ -386,7 +386,7 @@ export default function RegisterPage() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8" }}>
-                      Plate No.
+                      {t("Plate No.")}
                     </label>
                     <input
                       type="text"
@@ -399,7 +399,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
                 <span className="text-[11px]" style={{ color: "#64748B" }}>
-                  Verified vehicle details build trust and ensure safety for all passengers.
+                  {t("Verified vehicle details build trust and ensure safety for all passengers.")}
                 </span>
               </div>
             )}
@@ -435,11 +435,11 @@ export default function RegisterPage() {
                     className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
                     style={{ animation: "spin 1s linear infinite" }}
                   />
-                  <span>Creating Account...</span>
+                  <span>{t("Creating Account...")}</span>
                 </>
               ) : (
                 <>
-                  <span>Sign Up</span>
+                  <span>{t("Sign Up")}</span>
                   <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                 </>
               )}
@@ -452,7 +452,7 @@ export default function RegisterPage() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="px-3 font-medium" style={{ background: "rgba(30,41,59,0.65)", color: "#475569" }}>
-                  Or continue with
+                  {t("Or continue with")}
                 </span>
               </div>
             </div>
@@ -484,12 +484,12 @@ export default function RegisterPage() {
                 <path fill="#FBBC05" d="M5.28 14.56c-.24-.72-.38-1.5-.38-2.31s.14-1.59.38-2.31L1.41 6.94C.51 8.75 0 10.77 0 12.9s.51 4.15 1.41 5.96l3.87-3.3z" />
                 <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.91-2.96c-1.08.72-2.48 1.16-4.05 1.16-3.12 0-5.76-2.58-6.71-5.52l-3.87 3C3.39 20.33 7.35 23 12 23z" />
               </svg>
-              <span>Continue with Google</span>
+              <span>{t("Continue with Google")}</span>
             </button>
           </form>
 
           <p className="text-center text-sm mt-7" style={{ color: "#475569" }}>
-            Already have an account?{" "}
+            {t("Already have an account?")}{" "}
             <Link
               href="/login"
               className="font-semibold transition-all"
@@ -497,7 +497,7 @@ export default function RegisterPage() {
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#4ADE80"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#22C55E"; }}
             >
-              Sign In
+              {t("Sign In")}
             </Link>
           </p>
         </div>
