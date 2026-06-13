@@ -6,10 +6,6 @@
 [![Prisma ORM](https://img.shields.io/badge/Prisma-7.8-1B222C?style=for-the-badge&logo=prisma)](https://prisma.io/)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
----
-
-## 📋 Copy-Paste GitHub Repository Description
-> A premium, modern Next.js 16 (React 19) and Tailwind CSS v4 carpooling web application featuring real-time chat (Pusher), interactive maps (Leaflet + OpenRouteService), driver verification, automated fare splitting, and carbon footprint tracking.
 
 ---
 
